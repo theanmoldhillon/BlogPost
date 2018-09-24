@@ -1,0 +1,88 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewBag.Title - My ASP.NET Application</title>
+    @Styles.Render("~/Content/css")
+    @Scripts.Render("~/bundles/modernizr")
+
+</head>
+<body>
+    <nav class="navbar navbar-expand-md navbar-dark bg-dark">
+        <div class="container">
+            <div class="navbar-header">
+                <a class="navbar-brand" href="#">ANMOL'S BLOG POSTS</a>
+            </div>
+
+
+
+            <div class="collapse navbar-collapse" id="navbarMenu">
+                <ul class="navbar-nav mx-auto">
+                    <li>@Html.ActionLink("Home", "Index", "Home")</li>
+
+                    <li>@Html.ActionLink("About", "About", "Home")</li>
+
+                    <li>@Html.ActionLink("Contact", "Contact", "Home")</li>
+
+                    <li>@Html.ActionLink("BlogPosts", "Index", "BlogPosts")</li>
+
+                    @Html.Partial("_LoginPartial")
+                </ul>
+
+            </div>
+        </div>
+    </nav>
+    <header role="banner">
+        <div class="container logo-wrap">
+            <div class="row pt-5">
+                <div class="col-12 text-center">
+                    <hr />
+                    <h3 class="site-logo"><a href="index.html">BlogPosts</a></h3>
+                    <hr />
+                </div>
+            </div>
+        </div>
+
+    </header>
+
+    <div class="container body-content">
+        @RenderBody()
+        <hr/>
+
+        <div id="footer">
+            <div class="container">
+                <div class="row">
+                    <div class="col-lg-4">
+                        <h4>My Bunker</h4>
+                        <p>
+                            1748 Jefferson Avenue,<br /> +1 204-952-7111, <br /> Winnipeg, Manitoba.
+                        </p>
+                    </div>
+                    <!-- /col-lg-4 -->
+
+                    <div class="col-lg-4">
+                        <h4>My Links</h4>
+                        <p>
+                            <a href="https://github.com/theanmoldhillon">Github</a><br />
+                            <a href="https://www.linkedin.com/in/anmol-singh-93313216a/">LinkedIn</a><br />
+                        </p>
+                    </div>
+                    <!-- /col-lg-4 -->
+
+                    <div class="col-lg-4">
+                        <h4>About Me</h4>
+                        <p>I am a Backend Developer.</p>
+                    </div>
+                    <!-- /col-lg-4 -->
+                </div>
+            </div>
+        </div>
+    </div>
+    <hr />
+
+    @Scripts.Render("~/bundles/jquery")
+    @Scripts.Render("~/bundles/bootstrap")
+    @RenderSection("scripts", required: false)
+</body>
+</html>
