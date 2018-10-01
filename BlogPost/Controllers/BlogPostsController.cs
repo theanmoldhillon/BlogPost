@@ -9,9 +9,14 @@ using System.Web;
 using System.Web.Mvc;
 using BlogPost.Helpers;
 using BlogPost.Models;
+using PagedList;
+using PagedList.Mvc;
+using System.Data.Entity;
+using Microsoft.AspNet.Identity;
 
 namespace BlogPost.Controllers
 {
+    [RequireHttps]
     public class BlogPostsController : Controller
     {
         private ApplicationDbContext db = new ApplicationDbContext();
@@ -20,9 +25,26 @@ namespace BlogPost.Controllers
         public string Slug { get; private set; }
 
         // GET: BlogPosts
-        public ActionResult Index()
+        public ActionResult Index(int? page, string searchString)
         {
-            return View(db.Posts.ToList());
+            int pageSize = 1; // display three blog posts at a time on this page
+            int pageNumber = (page ?? 1);
+
+            var postQuery = db.Posts.OrderBy(p => p.Created).AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(searchString))
+            {
+                postQuery = postQuery
+                    .Where(p => p.Title.Contains(searchString) ||
+                                p.Body.Contains(searchString) ||
+                                p.Slug.Contains(searchString) ||
+                                p.Comments.Any(t => t.Body.Contains(searchString))
+                           ).AsQueryable();
+            }
+            var postList = postQuery.ToPagedList(pageNumber, pageSize);
+            ViewBag.SearchString = searchString;
+            return View(postList);
+
         }
 
 
@@ -48,13 +70,46 @@ namespace BlogPost.Controllers
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-            BlogPost.Models.BlogPost blogPost = db.Posts.Where(p => p.Slug == slug).FirstOrDefault();
-            if (blogPost == null)
+            BlogPost.Models.BlogPost blogPost = db.Posts
+                            .Include(p => p.Comments.Select(t => t.Author))
+                            .Where(p => p.Slug == slug)
+                            .FirstOrDefault(); if (blogPost == null)
             {
                 return HttpNotFound();
             }
             return View("Details", blogPost);
         }
+
+        // POST: BlogPosts/Details/5
+        [HttpPost]
+        public ActionResult DetailsSlug(string slug, string body)
+        {
+            if (slug == null)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+            }
+            var blogPost = db.Posts
+               .Where(p => p.Slug == slug)
+               .FirstOrDefault();
+            if (blogPost == null)
+            {
+                return HttpNotFound();
+            }
+            if (string.IsNullOrWhiteSpace(body))
+            {
+                ViewBag.ErrorMessage = "Comment is required";
+                return View("Details", blogPost);
+            }
+            var comment = new Comment();
+            comment.AuthorId = User.Identity.GetUserId();
+            comment.BlogPostId = blogPost.Id;
+            comment.Created = DateTime.Now;
+            comment.Body = body;
+            db.Comments.Add(comment);
+            db.SaveChanges();
+            return RedirectToAction("DetailsSlug", new { slug = slug });
+        }
+
 
         // GET: BlogPosts/Create
         [Authorize(Roles = "Admin")]
@@ -169,6 +224,38 @@ namespace BlogPost.Controllers
             db.SaveChanges();
             return RedirectToAction("Index");
         }
+
+          [HttpPost]
+        [Authorize]
+        public ActionResult CreateComment(string slug, string body)
+        {
+            if (slug == null)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+            }
+             var blogPost = db.Posts
+                .Where(p => p.Slug == slug)
+                .FirstOrDefault();
+             if (blogPost == null)
+            {
+                return HttpNotFound();
+            }
+
+            if (string.IsNullOrWhiteSpace(body))
+            {
+                TempData["ErrorMessage"] = "Comment is required";
+                return RedirectToAction("DetailsSlug", new { slug = slug });
+            }
+            var comment = new Comment();
+            comment.AuthorId = User.Identity.GetUserId();
+            comment.BlogPostId = blogPost.Id;
+            comment.Created = DateTime.Now;
+            comment.Body = body;
+             db.Comments.Add(comment);
+            db.SaveChanges();
+             return RedirectToAction("DetailsSlug", new { slug = slug });
+        }
+
 
         protected override void Dispose(bool disposing)
         {

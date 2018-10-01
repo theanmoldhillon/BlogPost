@@ -1,19 +1,14 @@
-﻿@model IEnumerable<BlogPost.Models.BlogPost>
+﻿@using PagedList;
+@using PagedList.Mvc;
+
+@model IEnumerable<BlogPost.Models.BlogPost>
 
 @{
     ViewBag.Title = "Index";
+    var pagedList = (IPagedList)Model;
 }
 
-<h2>Index</h2>
 
-<p>
-    @Html.ActionLink("Create New", "Create")
-
-    @if (User.Identity.IsAuthenticated && User.IsInRole("Admin"))
-        {
-            @Html.ActionLink("Create New", "Create")
-        }
-</p>
 
 <!doctype html>
 <html lang="en">
@@ -32,6 +27,23 @@
     <link rel="stylesheet" href="~/Content/style.css">
 </head>
 <body>
+
+    <h2>Index</h2>
+
+    <p>
+        @Html.ActionLink("Create New", "Create")
+
+        @if (User.Identity.IsAuthenticated && User.IsInRole("Admin"))
+        {
+            @Html.ActionLink("Create New", "Create")
+        }
+    </p>
+
+    @using (Html.BeginForm("Index", "BlogPosts", FormMethod.Get))
+    {
+        <input type="text" class="form-control" name="searchString" placeholder="Search for posts" value="@ViewBag.SearchString" />
+        <input type="submit" class="btn btn-primary" value="Search!" />
+    }
     <table class="table">
         <tr>
             <th>
@@ -92,6 +104,10 @@
         }
 
     </table>
+
+    Page @(pagedList.PageCount < pagedList.PageNumber ? 0 : pagedList.PageNumber) of     @pagedList.PageCount
+    @Html.PagedListPager(pagedList, page => Url.Action("Index", new { page, ViewBag.SearchString }))
+
 
 
 

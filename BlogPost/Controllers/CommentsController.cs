@@ -1,15 +1,14 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Data;
 using System.Data.Entity;
 using System.Linq;
 using System.Net;
-using System.Web;
 using System.Web.Mvc;
 using BlogPost.Models;
 
 namespace BlogPost.Controllers
 {
+    [RequireHttps]
+
     public class CommentsController : Controller
     {
         private ApplicationDbContext db = new ApplicationDbContext();
@@ -59,6 +58,7 @@ namespace BlogPost.Controllers
         }
 
         // GET: Comments/Edit/5
+        [Authorize(Roles = "Admin,Moderator")]
         public ActionResult Edit(int? id)
         {
             if (id == null)
@@ -78,18 +78,25 @@ namespace BlogPost.Controllers
         // more details see https://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
+
+        [Authorize(Roles = "Admin,Moderator")]
         public ActionResult Edit([Bind(Include = "Id,PostId,AuthorId,BodyId,Created,Updated,UpdateReason")] Comment comment)
         {
             if (ModelState.IsValid)
             {
-                db.Entry(comment).State = EntityState.Modified;
+                var commentDb = db.Comments.Where(p => p.Id == comment.Id).FirstOrDefault();
+                commentDb.Updated = DateTime.Now;
+                commentDb.Body = comment.Body;
+                commentDb.UpdateReason = comment.UpdateReason;
+
                 db.SaveChanges();
-                return RedirectToAction("Index");
+                return RedirectToAction("DetailsSlug", "BlogPosts", new { slug = commentDb.BlogPost.Slug });
             }
             return View(comment);
         }
 
         // GET: Comments/Delete/5
+        [Authorize(Roles = "Admin,Moderator")]
         public ActionResult Delete(int? id)
         {
             if (id == null)
@@ -107,12 +114,14 @@ namespace BlogPost.Controllers
         // POST: Comments/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,Moderator")]
         public ActionResult DeleteConfirmed(int id)
         {
             Comment comment = db.Comments.Find(id);
+            var slug = comment.BlogPost.Slug;
             db.Comments.Remove(comment);
             db.SaveChanges();
-            return RedirectToAction("Index");
+            return RedirectToAction("DetailsSlug", "BlogPosts", new { slug });
         }
 
         protected override void Dispose(bool disposing)
